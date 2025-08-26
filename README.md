@@ -1,11 +1,21 @@
-# python-weather-bot
-My automation side projects with Python and Power Automate
+# Weather Summary Auto-Split (程式自動輸出)
 
-主線（Main branch）：用來記錄自動化主流程的設計與執行過程（例如：一次查詢多城市天氣，結合 Power Automate 自動化等進階應用）
-This notebook includes both main workflow documentation and sub-branches for recording frequently asked questions or troubleshooting details.
+## 目的
+你的程式會自動產生 `weather_summary.xlsx` 並寫入 OneDrive；當該檔被覆蓋時，Power Automate 會自動備份並把資料依縣市拆成多個工作表，且在每列最左側加入當日日期。
 
-新增商業one drive適用的功能，並利用將副檔名改用.xlsx以利後續自動化操作。
-Add support for Business OneDrive features, and ensure files are saved with the .xlsx extension to facilitate subsequent automation processes. 
+## 架構
+1. **資料產生（程式）**：內部/排程程式將資料整理成 `weather_summary.xlsx`，存放至 OneDrive `/weather`（程式負責格式與欄位）。  
+2. **自動化處理（Power Automate）**：Trigger = When a file is created or modified (properties only)  
+   - Delay 15s → Get file metadata & content → 判斷是否為覆蓋（Created ≠ Modified）  
+   - 若為覆蓋：Create file（備份到 `/backup`）→ Excel Online → Run Office Script (`SplitByCityAddDate`)
+3. **Office Script**：`SplitByCityAddDate` 會偵測縣/市欄，依縣市分組並在每列前加入當日日期（yyyy/MM/dd）。
 
-新增偵測one drive檔案被修改或是覆蓋，進行資料整理將.xlsx資料轉換成table以利後續自動化操作。
-Add detection for modified or overwritten OneDrive files, and organize the data by converting .xlsx files into tables to facilitate subsequent automation processes.
+## 部署條件
+- OneDrive for Business（支援 Office Scripts）  
+- Power Automate 權限（OneDrive、Excel Online）  
+- 程式能把 `weather_summary.xlsx` 寫到 OneDrive 指定資料夾（或使用 Microsoft Graph 上傳）
+
+## 測試
+1. 由程式產生並上傳 `weather_summary.xlsx` 到 `/weather`（或手動複製測試檔）。  
+2. 覆蓋該檔 → 等 30 秒 → 檢查 Power Automate Run history、/backup 與 Excel 裡的各縣市分頁。
+
